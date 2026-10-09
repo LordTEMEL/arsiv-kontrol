@@ -33,6 +33,6 @@ Linux üzerinde iOS imzalı paket üretilemez. iOS kaynakları repodadır; imzal
 ## Güvenlik sınırları
 
 - `uploaded` kayıtlar asla silinebilir değildir.
-- Katalog eşleşmesi dosya adı, boyut, MIME türü, çekim zamanı ve SHA-256 gerektirir.
+- Katalog eşleşmesi dosya adı, boyut ve SHA-256 gerektirir. Silmeye aday olabilmesi için SHA-256 birebir tutmalıdır.
 - Tarayıcı kaynak medyayı silmez.
 - Token mobil güvenli depoda tutulur; token, veritabanı, imzalama anahtarı ve `.env` repoya eklenmez.

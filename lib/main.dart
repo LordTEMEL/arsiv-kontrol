@@ -90,29 +90,45 @@ class _ArchiveCheckPageState extends State<ArchiveCheckPage> {
         }
       }
       final locals = <LocalMedia>[];
+      var skipped = 0;
       for (final asset in assetsById.values) {
-        final file = await asset.originFile;
-        if (file == null) continue;
-        final size = await file.length();
-        locals.add(
-          LocalMedia(
-            id: asset.id,
-            fileName: asset.title ?? file.uri.pathSegments.last,
-            size: size,
-            capturedAt: asset.createDateTime.toUtc(),
-            mimeType: asset.mimeType ?? _mimeFromName(asset.title ?? ''),
-            readBytes: file.readAsBytes,
-          ),
-        );
+        try {
+          // iCloud'da kalan (cihazda orijinali olmayan) medya dışa aktarılamaz.
+          if (!await asset.isLocallyAvailable(isOrigin: true)) {
+            skipped++;
+            continue;
+          }
+          final file = await asset.originFile;
+          if (file == null) {
+            skipped++;
+            continue;
+          }
+          final size = await file.length();
+          locals.add(
+            LocalMedia(
+              id: asset.id,
+              fileName: asset.title ?? file.uri.pathSegments.last,
+              size: size,
+              capturedAt: asset.createDateTime.toUtc(),
+              mimeType: asset.mimeType ?? _mimeFromName(asset.title ?? ''),
+              readBytes: file.readAsBytes,
+            ),
+          );
+        } catch (_) {
+          skipped++;
+        }
       }
       final matches = await const DeliveryMatcher().match(locals, records);
       if (!mounted) return;
       setState(() {
         _deletable = matches;
         _selected.clear();
+        final note = skipped == 0
+            ? ''
+            : ' ($skipped medya okunamadığı için atlandı.)';
         _message = matches.isEmpty
-            ? 'Bilgisayarda doğrulanmış ve eşleşen medya bulunamadı.'
-            : '${matches.length} medya bilgisayarda doğrulandı.';
+            ? 'Bilgisayarda doğrulanmış ve eşleşen medya bulunamadı.$note'
+            : '${matches.length} medya bilgisayarda doğrulandı.$note';
       });
     } catch (error) {
       if (mounted) setState(() => _message = 'Hata: $error');

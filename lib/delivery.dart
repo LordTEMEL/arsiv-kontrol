@@ -74,12 +74,12 @@ class DeliveryMatcher {
     final result = <DeletableMedia>[];
 
     for (final local in localMedia) {
+      // Ad ve boyut yalnızca hash'lenecek adayları daraltır. Silme güvenliğini
+      // asıl SHA-256 eşleşmesi sağlar; çekim zamanı ve MIME türü platformlar
+      // arasında tutarsız olabildiği için kapı olarak kullanılmaz.
       final candidates = delivered.where(
         (record) =>
-            record.fileName == local.fileName &&
-            record.size == local.size &&
-            record.mimeType == local.mimeType &&
-            record.capturedAt.toUtc() == local.capturedAt.toUtc(),
+            record.fileName == local.fileName && record.size == local.size,
       );
       if (candidates.isEmpty) continue;
 
