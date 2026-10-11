@@ -1,0 +1,21 @@
+   name: Format
+   on: workflow_dispatch
+   permissions:
+     contents: write
+   jobs:
+     format:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v4
+         - uses: subosito/flutter-action@v2
+           with:
+             channel: stable
+             flutter-version: '3.47.6'
+             cache: true
+         - run: dart format lib test
+         - run: |
+             git config user.name "github-actions[bot]"
+             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+             git add -A
+             git diff --cached --quiet || git commit -m "Format Dart code"
+             git push
