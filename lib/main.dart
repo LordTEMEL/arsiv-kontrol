@@ -172,6 +172,22 @@ class _ArchiveCheckPageState extends State<ArchiveCheckPage> {
     }
   }
 
+  bool get _allSelected =>
+      _deletable.isNotEmpty && _selected.length == _deletable.length;
+
+  String get _toggleLabel =>
+      _allSelected ? 'Seçimi kaldır' : 'Tümünü seç (${_deletable.length})';
+
+  void _toggleAll() {
+    setState(() {
+      if (_allSelected) {
+        _selected.clear();
+      } else {
+        _selected.addAll(_deletable.map((item) => item.local.id));
+      }
+    });
+  }
+
   String _mimeFromName(String name) {
     final lower = name.toLowerCase();
     if (lower.endsWith('.png')) return 'image/png';
@@ -228,6 +244,12 @@ class _ArchiveCheckPageState extends State<ArchiveCheckPage> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(_message),
             ),
+            if (_deletable.isNotEmpty)
+              TextButton.icon(
+                onPressed: _busy ? null : _toggleAll,
+                icon: const Icon(Icons.select_all),
+                label: Text(_toggleLabel),
+              ),
             Expanded(
               child: ListView.builder(
                 itemCount: _deletable.length,
