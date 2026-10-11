@@ -83,8 +83,10 @@ class _ArchiveCheckPageState extends State<ArchiveCheckPage> {
       );
       final assetsById = <String, AssetEntity>{};
       for (final path in paths) {
-        for (final asset
-            in await path.getAssetListPaged(page: 0, size: 100000)) {
+        for (final asset in await path.getAssetListPaged(
+          page: 0,
+          size: 100000,
+        )) {
           assetsById[asset.id] = asset;
         }
       }
