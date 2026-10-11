@@ -83,10 +83,8 @@ class _ArchiveCheckPageState extends State<ArchiveCheckPage> {
       );
       final assetsById = <String, AssetEntity>{};
       for (final path in paths) {
-        for (final asset in await path.getAssetListPaged(
-          page: 0,
-          size: 100000,
-        )) {
+        final found = await path.getAssetListPaged(page: 0, size: 100000);
+        for (final asset in found) {
           assetsById[asset.id] = asset;
         }
       }
@@ -131,9 +129,9 @@ class _ArchiveCheckPageState extends State<ArchiveCheckPage> {
       setState(() {
         _deletable = matches;
         _selected.clear();
-        final note =
-            ' (katalogda ${records.length} kayıt, ${assetsById.length} medya '
-            'tarandı, $skipped okunamadı.)';
+        final known = records.length;
+        final total = assetsById.length;
+        final note = ' (katalog $known, tarandı $total, okunamadı $skipped)';
         _message = matches.isEmpty
             ? 'Bilgisayarda doğrulanmış ve eşleşen medya bulunamadı.$note'
             : '${matches.length} medya bilgisayarda doğrulandı.$note';
