@@ -6,7 +6,6 @@ import 'package:photo_manager/photo_manager.dart';
 
 import 'catalog.dart';
 import 'delivery.dart';
-import 'media_selection.dart';
 
 void main() => runApp(const ArchiveCheckApp());
 
@@ -84,9 +83,9 @@ class _ArchiveCheckPageState extends State<ArchiveCheckPage> {
       );
       final assetsById = <String, AssetEntity>{};
       for (final path in paths) {
-        final pathAssets = await path.getAssetListPaged(page: 0, size: 100000);
-        for (final asset in pathAssets) {
-          assetsById.putIfAbsent(asset.id, () => asset);
+        for (final asset
+            in await path.getAssetListPaged(page: 0, size: 100000)) {
+          assetsById[asset.id] = asset;
         }
       }
       final locals = <LocalMedia>[];
@@ -104,10 +103,17 @@ class _ArchiveCheckPageState extends State<ArchiveCheckPage> {
             continue;
           }
           final size = await file.length();
+          String name;
+          try {
+            // iOS'ta title boş gelir; özgün ad titleAsync ile alınır.
+            name = asset.title ?? await asset.titleAsync;
+          } catch (_) {
+            name = file.uri.pathSegments.last;
+          }
           locals.add(
             LocalMedia(
               id: asset.id,
-              fileName: asset.title ?? file.uri.pathSegments.last,
+              fileName: name,
               size: size,
               capturedAt: asset.createDateTime.toUtc(),
               mimeType: asset.mimeType ?? _mimeFromName(asset.title ?? ''),
@@ -123,9 +129,9 @@ class _ArchiveCheckPageState extends State<ArchiveCheckPage> {
       setState(() {
         _deletable = matches;
         _selected.clear();
-        final note = skipped == 0
-            ? ''
-            : ' ($skipped medya okunamadığı için atlandı.)';
+        final note =
+            ' (katalogda ${records.length} kayıt, ${assetsById.length} medya '
+            'tarandı, $skipped okunamadı.)';
         _message = matches.isEmpty
             ? 'Bilgisayarda doğrulanmış ve eşleşen medya bulunamadı.$note'
             : '${matches.length} medya bilgisayarda doğrulandı.$note';
@@ -144,22 +150,20 @@ class _ArchiveCheckPageState extends State<ArchiveCheckPage> {
       _message = 'Sistem silme onayı bekleniyor…';
     });
     try {
-      final ids = uniqueMediaIds(
-        _deletable
-            .where((item) => _selected.contains(item.local.id))
-            .map((item) => item.local.id),
-      );
-      final returnedIds = await PhotoManager.editor.deleteWithIds(ids);
-      final result = deletionResult(requestedIds: ids, deletedIds: returnedIds);
+      final ids = _deletable
+          .where((item) => _selected.contains(item.local.id))
+          .map((item) => item.local.id)
+          .toList();
+      final deletedIds = await PhotoManager.editor.deleteWithIds(ids);
       if (!mounted) return;
       setState(() {
         _deletable = _deletable
-            .where((item) => !result.deletedIds.contains(item.local.id))
+            .where((item) => !deletedIds.contains(item.local.id))
             .toList();
-        _selected.removeAll(result.deletedIds);
-        _message = result.deletedCount == 0
+        _selected.removeAll(deletedIds);
+        _message = deletedIds.isEmpty
             ? 'Silme iptal edildi veya sistem izin vermedi.'
-            : '${result.deletedCount} medya sistem onayıyla silindi.';
+            : '${deletedIds.length} medya sistem onayıyla silindi.';
       });
     } catch (error) {
       if (mounted) setState(() => _message = 'Silme başarısız: $error');
@@ -224,24 +228,6 @@ class _ArchiveCheckPageState extends State<ArchiveCheckPage> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(_message),
             ),
-            if (_deletable.isNotEmpty)
-              CheckboxListTile(
-                key: const Key('select-all'),
-                contentPadding: EdgeInsets.zero,
-                value: _selected.length == _deletable.length,
-                tristate: true,
-                onChanged: _busy
-                    ? null
-                    : (checked) => setState(
-                        () => updateSelectAll(
-                          selected: _selected,
-                          mediaIds: _deletable.map((item) => item.local.id),
-                          select: checked == true,
-                        ),
-                      ),
-                title: const Text('Tümünü seç'),
-                subtitle: Text('${_selected.length} seçili'),
-              ),
             Expanded(
               child: ListView.builder(
                 itemCount: _deletable.length,

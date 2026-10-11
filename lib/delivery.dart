@@ -74,13 +74,11 @@ class DeliveryMatcher {
     final result = <DeletableMedia>[];
 
     for (final local in localMedia) {
-      // Ad ve boyut yalnızca hash'lenecek adayları daraltır. Silme güvenliğini
-      // asıl SHA-256 eşleşmesi sağlar; çekim zamanı ve MIME türü platformlar
-      // arasında tutarsız olabildiği için kapı olarak kullanılmaz.
-      final candidates = delivered.where(
-        (record) =>
-            record.fileName == local.fileName && record.size == local.size,
-      );
+      // Boyut yalnızca hash'lenecek adayları daraltır. Silme güvenliğini asıl
+      // SHA-256 eşleşmesi sağlar. Dosya adı (iOS'ta başlık boş gelebilir,
+      // Nextcloud yüklemede yeniden adlandırabilir), çekim zamanı ve MIME türü
+      // platformlar arasında tutarsız olabildiği için kapı olarak kullanılmaz.
+      final candidates = delivered.where((record) => record.size == local.size);
       if (candidates.isEmpty) continue;
 
       final digest = sha256.convert(await local.readBytes()).toString();

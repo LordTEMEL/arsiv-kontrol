@@ -55,12 +55,12 @@ void main() {
       expect(matches, hasLength(1));
     });
 
-    test('does not hash a candidate whose metadata differs', () async {
+    test('does not hash a candidate whose size differs', () async {
       var bytesRead = false;
       final asset = LocalMedia(
         id: 'local-1',
-        fileName: 'other.jpg',
-        size: 4,
+        fileName: 'IMG_0001.jpg',
+        size: 5,
         capturedAt: DateTime.utc(2026, 1, 2),
         mimeType: 'image/jpeg',
         readBytes: () async {
